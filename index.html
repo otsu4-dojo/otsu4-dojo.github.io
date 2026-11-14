@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b42318">
+<meta name="description" content="乙4 お試し35問。スマホで1問ずつ解いて、その場で答え合わせ。科目ごとの正解率が残ります。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="乙4お試し">
+<title>乙4 お試し35問</title>
+<style>
+/* Layout: one narrow column, one question per screen; summary on the home view, answer feedback in place */
+:root {
+  --bg: #f7f6f4; --surface: #ffffff; --fg: #1d1b19; --muted: #6b6560; --line: #dcd7d1;
+  --accent: #b42318; --accent-fg: #ffffff; --ok: #157347; --ok-bg: #e6f4ec; --ng: #b42318; --ng-bg: #fbe9e7;
+  --soft: #efece8;
+  --font-body: "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  --font-num: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171513; --surface: #211e1b; --fg: #f1ede8; --muted: #a59d95; --line: #3a3531;
+  --accent: #ef6a5b; --accent-fg: #1a0d0b; --ok: #5cc98d; --ok-bg: #1d3328; --ng: #ef6a5b; --ng-bg: #3a201c;
+  --soft: #2b2724; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #171513; --surface: #211e1b; --fg: #f1ede8; --muted: #a59d95; --line: #3a3531;
+  --accent: #ef6a5b; --accent-fg: #1a0d0b; --ok: #5cc98d; --ok-bg: #1d3328; --ng: #ef6a5b; --ng-bg: #3a201c;
+  --soft: #2b2724; color-scheme: dark; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 34rem; margin: 0 auto; padding-block: 16px 32px; display: grid; gap: 16px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); }
+h1 { font-size: 22px; line-height: 1.35; margin: 0; text-wrap: balance; }
+.sign { display: inline-block; background: var(--accent); color: var(--accent-fg); font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; padding: 2px 8px; border-radius: 3px; }
+.lead { color: var(--muted); margin: 0; font-size: 14px; }
+.subjects { display: grid; gap: 10px; }
+.subj { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.subj .name { font-weight: 700; }
+.subj .meta { font-size: 13px; color: var(--muted); grid-column: 1; }
+.subj .rate { grid-row: 1 / span 2; grid-column: 2; font-family: var(--font-num); font-variant-numeric: tabular-nums;
+  font-size: 20px; font-weight: 700; text-align: right; min-width: 4.5ch; }
+.rate small { display: block; font-size: 11px; font-weight: 400; color: var(--muted); font-family: var(--font-body); }
+.pass { color: var(--ok); } .fail { color: var(--ng); }
+.meter { grid-column: 1 / -1; height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
+.meter b { position: absolute; top: -2px; bottom: -2px; left: 60%; width: 2px; background: var(--muted); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { flex: 1 1 13rem; border-radius: 12px; padding: 13px 16px; font-weight: 700; border: 1px solid var(--line); background: var(--surface); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.btn:disabled { opacity: .45; cursor: default; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.link { background: none; border: 0; padding: 6px 0; color: var(--muted); font-size: 14px; }
+.progress { height: 4px; background: var(--soft); border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.count { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+.tag { font-size: 12px; background: var(--soft); border-radius: 999px; padding: 2px 10px; color: var(--muted); }
+.question { font-size: 17px; margin: 0; }
+.choices { display: grid; gap: 10px; }
+.choice { display: grid; grid-template-columns: 2rem 1fr; gap: 6px; text-align: left; align-items: start;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 15px; line-height: 1.5; }
+.choice .no { font-family: var(--font-num); font-weight: 700; color: var(--muted); }
+.choice.correct { border-color: var(--ok); background: var(--ok-bg); }
+.choice.correct .no { color: var(--ok); }
+.choice.wrong { border-color: var(--ng); background: var(--ng-bg); }
+.choice.wrong .no { color: var(--ng); }
+.choice[disabled] { cursor: default; }
+/* 選択中は正誤の色（緑・赤）と区別するため、文字色の太枠にする */
+.choice.selected { border-color: var(--fg); box-shadow: inset 0 0 0 1.5px var(--fg); background: var(--soft); }
+.choice.selected .no { color: var(--fg); }
+.submit { position: sticky; bottom: 0; padding-block: 10px max(10px, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to bottom, transparent, var(--bg) 30%); }
+.submit .btn { width: 100%; }
+.feedback { border-radius: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 6px; }
+.verdict { font-weight: 700; font-size: 18px; }
+.verdict.ok { color: var(--ok); } .verdict.ng { color: var(--ng); }
+.exp { margin: 0; font-size: 15px; }
+.result-head { text-align: center; display: grid; gap: 4px; padding-block: 8px; }
+.big { font-family: var(--font-num); font-size: 44px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.verdict-line { font-weight: 700; }
+.more { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.more h2 { font-size: 14px; margin: 8px 0 0; }
+.more a { display: block; color: var(--fg); text-decoration: none; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.more a span { display: block; font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
+</style>
+
+</head><body>
+<main id="app" aria-live="polite"></main>
+
+<script>
+const DATA = {"title": "危険物乙4 過去問類似のお試し", "n_questions": 35, "questions": [{"topic": "第4類に当たる物品", "question": "次の物品のうち、消防法上の第4類の危険物に該当しないものはどれか。", "choices": ["エタノール", "黄りん", "ガソリン", "灯油", "ギヤー油"], "answer": 2, "explanation": "黄りんは第3類（自然発火性物質及び禁水性物質）の危険物です。ガソリン（第1石油類）、エタノール（アルコール類）、灯油（第2石油類）、ギヤー油（第4石油類）は、いずれも第4類（引火性液体）です。", "subject_key": "law"}, {"topic": "屋外貯蔵所に貯蔵できる危険物", "question": "法令上、屋外貯蔵所に貯蔵することができない危険物はどれか。", "choices": ["灯油", "ガソリン", "動植物油類", "重油", "エタノール"], "answer": 2, "explanation": "屋外貯蔵所で貯蔵できる第4類は、第1石油類（引火点0℃以上のもの）、アルコール類、第2〜第4石油類、動植物油類です。ガソリンは引火点が−40℃以下の第1石油類なので貯蔵できません。特殊引火物も貯蔵できません。", "subject_key": "law"}, {"topic": "指定数量の倍数の計算", "question": "同じ場所に、ガソリン400L、灯油2,000L、重油4,000Lを貯蔵する。指定数量の倍数はいくつか。", "choices": ["3", "4", "5", "6", "8"], "answer": 4, "explanation": "指定数量はガソリン200L、灯油1,000L、重油2,000Lです。倍数は品名ごとに「貯蔵量÷指定数量」を求めて合計します。400÷200＋2,000÷1,000＋4,000÷2,000＝2＋2＋2＝6です。", "subject_key": "law"}, {"topic": "保安距離が必要な施設", "question": "法令上、学校や病院などの建築物から一定の距離（保安距離）を保つ必要がない施設はどれか。", "choices": ["給油取扱所", "一般取扱所", "製造所", "屋外貯蔵所", "屋内貯蔵所"], "answer": 1, "explanation": "保安距離が必要なのは、製造所、屋内貯蔵所、屋外タンク貯蔵所、屋外貯蔵所、一般取扱所です。給油取扱所、地下タンク貯蔵所、移動タンク貯蔵所、販売取扱所などには保安距離の規定はありません。", "subject_key": "law"}, {"topic": "第5種消火設備の適応", "question": "法令上、第4類の危険物の火災に適応しない第5種の消火設備はどれか。", "choices": ["りん酸塩類等の粉末を放射する消火器", "乾燥砂", "泡を放射する消火器", "棒状の強化液を放射する消火器", "二酸化炭素を放射する消火器"], "answer": 4, "explanation": "棒状の水や棒状の強化液は、燃えている油を飛び散らせ、火面を広げるおそれがあるため、第4類の火災には適応しません。霧状の強化液、泡、二酸化炭素、ハロゲン化物、粉末、乾燥砂は適応します。", "subject_key": "law"}, {"topic": "製造所の構造・設備の基準", "question": "法令上、製造所の位置、構造及び設備の基準について、誤っているものはどれか。", "choices": ["危険物を取り扱う設備は、危険物のもれ、あふれ又は飛散を防止できる構造とする。", "可燃性の蒸気が滞留するおそれのある建築物には、その蒸気を屋外の高所に排出する設備を設ける。", "危険物を取り扱う建築物の窓や出入口にガラスを用いる場合は、普通の板ガラスとする。", "危険物を取り扱う建築物の床は、危険物が浸透しない構造とし、適当な傾斜を付け、貯留設備を設ける。", "指定数量の倍数が10以上の製造所には、周囲の状況によって安全上支障がない場合を除き、避雷設備を設ける。"], "answer": 3, "explanation": "窓や出入口にガラスを用いる場合は、網入りガラスとしなければなりません。床の構造、蒸気の高所への排出、指定数量の倍数10以上での避雷設備、もれ・あふれ・飛散の防止は、いずれも正しい基準です。", "subject_key": "law"}, {"topic": "設置・変更の手続き", "question": "法令上、製造所等の設置や変更の手続きについて、誤っているものはどれか。", "choices": ["完成検査前検査は、液体の危険物を貯蔵するタンクの有無にかかわらず、すべての製造所等で受けなければならない。", "変更工事に関係しない部分を工事中に使用したいときは、市町村長等の仮使用の承認を受ければ使用できる。", "変更の許可を受けた工事が終わったら完成検査を受け、基準に適合すると認められた後でなければ使用できない。", "製造所等を設置しようとする者は、市町村長等の許可を受けなければならない。", "位置・構造・設備を変えずに危険物の品名や数量を変えるときは、変更しようとする日の10日前までに届け出る。"], "answer": 1, "explanation": "完成検査前検査は、液体の危険物を貯蔵し又は取り扱うタンクを設置・変更する場合に受ける検査で、すべての製造所等が対象ではありません。ほかの記述は正しい手続きです。", "subject_key": "law"}, {"topic": "使用停止命令の事由", "question": "法令上、市町村長等が製造所等の使用停止を命ずることができる事由に該当するものはどれか。", "choices": ["予防規程を定めなければならない製造所等で、予防規程を定めていないとき。", "危険物保安監督者を定めなければならない製造所等で、危険物保安監督者を定めていないとき。", "危険物の品名を変更したのに、変更の届出をしていないとき。", "危険物施設保安員を定めなければならない製造所等で、危険物施設保安員を定めていないとき。", "製造所等で危険物を取り扱う危険物取扱者が、保安講習を受講していないとき。"], "answer": 2, "explanation": "危険物保安統括管理者や危険物保安監督者を定めていないことは、使用停止命令の事由です。危険物施設保安員や予防規程を定めていないこと、保安講習の未受講、届出の怠りは、別の罰則や命令の対象ですが、使用停止命令の事由には当たりません。", "subject_key": "law"}, {"topic": "定期点検", "question": "法令上、定期点検について正しいものはどれか。", "choices": ["定期点検は、危険物取扱者でなければ行うことができない。", "定期点検は、3年に1回以上行わなければならない。", "定期点検の結果は、点検のたびに市町村長等に報告しなければならない。", "すべての製造所等が、定期点検の対象となる。", "定期点検の記録は、原則として3年間保存しなければならない。"], "answer": 5, "explanation": "定期点検の記録は原則3年間保存します。点検は1年に1回以上行い、危険物施設保安員や、危険物取扱者の立会いを受けた人も行えます。結果を市町村長等に報告する義務はなく、対象となる製造所等は政令で定められたものに限られます。", "subject_key": "law"}, {"topic": "免状の書換え・再交付", "question": "法令上、免状の書換えと再交付について、正しいものはどれか。", "choices": ["亡失した免状を再交付の後に発見したときは、30日以内に再交付を受けた知事に提出する。", "再交付の申請は、免状を交付した都道府県知事にしかできない。", "免状を亡失したときの再交付は、居住地を管轄する都道府県知事に申請する。", "免状の写真が撮影から5年を経過したときは、書換えを申請しなければならない。", "本籍地の属する都道府県が変わったときの書換えは、勤務地を管轄する都道府県知事にも申請できる。"], "answer": 5, "explanation": "書換えは、免状を交付した知事、居住地又は勤務地を管轄する知事に申請できます（氏名・本籍地の都道府県の変更、写真が撮影から10年を経過したときなど）。再交付は、交付した知事又は書換えをした知事に申請します。亡失した免状を発見したときは10日以内に、再交付を受けた知事に提出します。", "subject_key": "law"}, {"topic": "危険物保安監督者が必要な施設", "question": "法令上、貯蔵・取り扱う危険物の種類や数量にかかわらず、危険物保安監督者を定める必要がない製造所等はどれか。", "choices": ["移送取扱所", "給油取扱所", "屋外タンク貯蔵所", "移動タンク貯蔵所", "製造所"], "answer": 4, "explanation": "製造所、屋外タンク貯蔵所、給油取扱所、移送取扱所は、危険物の種類や数量にかかわらず危険物保安監督者を定めなければなりません。移動タンク貯蔵所は、危険物保安監督者を定める必要がありません。", "subject_key": "law"}, {"topic": "移動タンク貯蔵所の移送", "question": "法令上、移動タンク貯蔵所による危険物の移送について、誤っているものはどれか。", "choices": ["移動タンク貯蔵所には、完成検査済証や定期点検の記録などを備え付けておく。", "アルキルアルミニウム等を移送するときは、移送の経路などを記載した書面を関係消防機関に送付する。", "丙種危険物取扱者は、ガソリンを移送する移動タンク貯蔵所に、移送のための危険物取扱者として乗車できない。", "長時間にわたる移送では、原則として2人以上の運転要員を確保する。", "危険物を移送する移動タンク貯蔵所には、その危険物を取り扱える危険物取扱者が乗車し、免状を携帯する。"], "answer": 3, "explanation": "丙種危険物取扱者はガソリンを取り扱えるため、ガソリンの移送に乗車する危険物取扱者になれます。乗車して免状を携帯すること、長時間の移送での2人以上の運転要員、書類の備付け、アルキルアルミニウム等の移送の届出は、いずれも正しい内容です。", "subject_key": "law"}, {"topic": "保安検査", "question": "法令上、市町村長等が行う保安検査について、正しいものはどれか。", "choices": ["地下タンク貯蔵所は、タンクの容量にかかわらず保安検査の対象となる。", "すべての給油取扱所が、保安検査の対象となる。", "保安検査は、製造所等の所有者等が自ら行い、その結果を記録しておくものである。", "対象は、政令で定める規模以上の屋外タンク貯蔵所と移送取扱所である。", "保安検査は、危険物取扱者が行わなければならない。"], "answer": 4, "explanation": "保安検査は市町村長等が行う検査で、対象は容量1万kL以上の屋外タンク貯蔵所と、政令で定める規模以上の移送取扱所です。所有者等が自ら行って記録するのは定期点検です。", "subject_key": "law"}, {"topic": "運搬容器の表示", "question": "法令上、第4類の危険物を収納した運搬容器の外部に表示する注意事項として、正しいものはどれか。", "choices": ["火気注意", "禁水", "衝撃注意", "可燃物接触注意", "火気厳禁"], "answer": 5, "explanation": "第4類の危険物の運搬容器には「火気厳禁」と表示します。「衝撃注意」「可燃物接触注意」は第1類や第5類・第6類、「禁水」は第3類（禁水性物品）などで使われる表示です。", "subject_key": "law"}, {"topic": "顧客用固定給油設備の色", "question": "法令上、顧客に自ら給油させる給油取扱所で、軽油を給油するための顧客用固定給油設備に彩色を施す場合の色はどれか。", "choices": ["黄色", "赤色", "白色", "青色", "緑色"], "answer": 5, "explanation": "セルフ型の給油取扱所で彩色をする場合、レギュラーガソリンは赤色、ハイオクガソリンは黄色、軽油は緑色、灯油は青色と定められています。", "subject_key": "law"}, {"topic": "可燃物かどうか", "question": "次の気体のうち、空気中で燃焼しないものはどれか。", "choices": ["硫化水素", "水素", "メタン", "一酸化炭素", "二酸化炭素"], "answer": 5, "explanation": "二酸化炭素は、炭素が完全に酸化された物質なので、それ以上燃えません。一酸化炭素、水素、硫化水素、メタンはいずれも可燃性の気体です。", "subject_key": "physchem"}, {"topic": "燃焼の定義と3要素", "question": "燃焼について、正しいものはどれか。", "choices": ["酸素供給源は、空気中の酸素に限られる。", "燃焼は、熱と光の発生を伴う酸化反応である。", "燃焼は、熱を吸収する還元反応である。", "可燃物と点火源があれば、酸素供給源がなくても燃焼は続く。", "熱が発生すれば、光を伴わなくても燃焼という。"], "answer": 2, "explanation": "燃焼は熱と光の発生を伴う酸化反応です。燃焼には可燃物・酸素供給源・点火源の3つが必要で、酸素供給源には空気のほか、酸素を含む酸化剤などもあります。", "subject_key": "physchem"}, {"topic": "発火点の定義", "question": "空気中で可燃物を加熱したとき、炎などの点火源がなくても自ら燃え始める最低の温度を何というか。", "choices": ["融点", "発火点", "引火点", "沸点", "燃焼点"], "answer": 2, "explanation": "点火源がなくても自ら燃え始める最低温度が発火点です。引火点は、点火源を近づけたときに引火する最低の液温です。燃焼点は、引火した後に燃焼が続く最低の液温です。", "subject_key": "physchem"}, {"topic": "二酸化炭素消火剤", "question": "二酸化炭素消火剤について、正しいものはどれか。", "choices": ["主な消火効果は、酸素の濃度を下げる窒息効果である。", "人がいる密閉した室内で放出しても、窒息の危険はない。", "空気より軽いので、放出すると室内の上の方にたまる。", "電気を通しやすいので、電気設備の火災には使えない。", "主な消火効果は、燃焼を化学的に抑える抑制効果である。"], "answer": 1, "explanation": "二酸化炭素の主な消火効果は窒息効果です。電気を通さないので電気火災にも使えます。空気より重く、低い所にたまります。密閉した室内で放出すると酸欠や中毒の危険があります。抑制効果が主なのはハロゲン化物や粉末です。", "subject_key": "physchem"}, {"topic": "自然発火の発熱の種類", "question": "自然発火の原因となる発熱と、その例となる物質の組合せとして、正しいものはどれか。", "choices": ["たい肥 ― 吸着熱", "乾性油 ― 酸化熱", "ニトロセルロース ― 発酵熱", "活性炭 ― 分解熱", "セルロイド ― 吸着熱"], "answer": 2, "explanation": "乾性油（アマニ油など）は酸化熱で自然発火します。セルロイドやニトロセルロースは分解熱、活性炭は吸着熱、たい肥や干し草は発酵熱です。", "subject_key": "physchem"}, {"topic": "静電気", "question": "静電気について、誤っているものはどれか。", "choices": ["電気を通しにくい物質ほど、帯電しやすい。", "接地（アース）は、静電気がたまるのを防ぐ方法の一つである。", "湿度が高いと、帯電しにくくなる。", "帯電は、摩擦などで物体の間を陽子が移動することで起こる。", "液体を配管で送るときは、流速が大きいほど静電気が発生しやすい。"], "answer": 4, "explanation": "帯電は、物体の間を電子が移動することで起こります。電子を失った側が正に、電子を得た側が負に帯電します。陽子は移動しません。ほかの記述は正しい内容です。", "subject_key": "physchem"}, {"topic": "生成熱の計算", "question": "水素（H₂）、炭素（C）、メタン（CH₄）の燃焼熱を、それぞれ286kJ/mol、394kJ/mol、891kJ/molとする。メタンの生成熱として正しいものはどれか。", "choices": ["497kJ/mol", "1,177kJ/mol", "75kJ/mol", "1,857kJ/mol", "211kJ/mol"], "answer": 3, "explanation": "メタン1molは、炭素1molと水素2molからできます。生成熱は「原料の燃焼熱の合計−メタンの燃焼熱」で求められ、394＋286×2−891＝75kJ/molです。", "subject_key": "physchem"}, {"topic": "単体と化合物", "question": "次の物質のうち、化合物であるものはどれか。", "choices": ["水", "鉄", "酸素", "ダイヤモンド", "オゾン"], "answer": 1, "explanation": "水は水素と酸素からなる化合物です。酸素、鉄、オゾン、ダイヤモンド（炭素）は、1種類の元素だけからなる単体です。", "subject_key": "physchem"}, {"topic": "官能基", "question": "有機化合物と、それに含まれる官能基の組合せとして、正しいものはどれか。", "choices": ["CH₃COOH ― カルボキシ基", "CH₃COCH₃ ― アルデヒド基", "HCHO ― ヒドロキシ基", "C₆H₅NH₂ ― ニトロ基", "C₂H₅OH ― カルボキシ基"], "answer": 1, "explanation": "酢酸（CH₃COOH）はカルボキシ基を持ちます。エタノールはヒドロキシ基、ホルムアルデヒドはアルデヒド基、アニリンはアミノ基、アセトンはカルボニル基（ケトン基）を持ちます。", "subject_key": "physchem"}, {"topic": "状態変化", "question": "物質の状態変化について、正しいものはどれか。", "choices": ["固体が液体を経ずに直接気体になる変化を、昇華という。", "水が凍って氷になると、体積は小さくなる。", "固体が融解するときは、熱を放出する。", "純物質が沸騰している間は、温度が上がり続ける。", "外圧が高くなると、沸点は低くなる。"], "answer": 1, "explanation": "固体から直接気体になる変化は昇華です。外圧が高いと沸点は高くなります。融解では熱を吸収します。水は凍ると体積が大きくなります。純物質の沸騰中は温度が一定です。", "subject_key": "physchem"}, {"topic": "危険物の類ごとの性質", "question": "危険物の類と、その性質の組合せとして、正しいものはどれか。", "choices": ["第4類 ― 引火性液体", "第1類 ― 可燃性固体", "第6類 ― 可燃性液体", "第5類 ― 禁水性物質", "第2類 ― 酸化性液体"], "answer": 1, "explanation": "第4類は引火性液体です。第1類は酸化性固体、第2類は可燃性固体、第3類は自然発火性物質及び禁水性物質、第5類は自己反応性物質、第6類は酸化性液体（不燃性）です。", "subject_key": "property"}, {"topic": "第4類の貯蔵・取扱い", "question": "第4類の危険物の貯蔵・取扱いについて、誤っているものはどれか。", "choices": ["容器に詰めるときは、温度変化による膨張を考えて空間を残す。", "静電気が発生するおそれがある場合は、接地などで静電気を除去する。", "可燃性の蒸気が滞留するおそれのある場所でも、火花を発する機械器具を使ってよい。", "蒸気は空気より重いものが多いので、低所の換気に注意する。", "容器は密栓し、冷暗所に貯蔵する。"], "answer": 3, "explanation": "可燃性の蒸気が滞留するおそれのある場所では、火花を発する機械器具や工具を使ってはいけません。ほかの記述は、第4類の正しい貯蔵・取扱いです。", "subject_key": "property"}, {"topic": "灯油火災の消火", "question": "灯油の火災の消火方法として、適切でないものはどれか。", "choices": ["泡消火剤を放射する。", "りん酸塩類等の粉末消火剤を放射する。", "棒状の水を放射する。", "ハロゲン化物消火剤を放射する。", "二酸化炭素消火剤を放射する。"], "answer": 3, "explanation": "灯油は水より軽く水に溶けないため、棒状の水をかけると油が水に浮いて広がり、火面を広げるおそれがあります。泡、二酸化炭素、粉末、ハロゲン化物による窒息・抑制の消火が適しています。", "subject_key": "property"}, {"topic": "水を張って貯蔵する物質", "question": "可燃性の蒸気の発生を防ぐため、容器に水を張って貯蔵する第4類の危険物はどれか。", "choices": ["重油", "ガソリン", "エタノール", "二硫化炭素", "灯油"], "answer": 4, "explanation": "二硫化炭素は水より重く水に溶けないため、水を張って貯蔵し、蒸気の発生を防ぎます。ほかの物質にはこの貯蔵方法はとりません。", "subject_key": "property"}, {"topic": "水溶性液体の火災", "question": "アルコール類やアセトンなど、水溶性の第4類の危険物の火災について、正しいものはどれか。", "choices": ["棒状の水を放射するのが最も効果的である。", "水で薄めると、引火点は低くなる。", "二酸化炭素消火剤は使えない。", "粉末消火剤は使えない。", "普通の泡は溶けて消えやすいので、水溶性液体用の泡消火剤を使う。"], "answer": 5, "explanation": "水溶性の液体には普通の泡が溶けて消えてしまうため、水溶性液体用（耐アルコール）の泡消火剤を使います。水で薄めると引火点は高くなります。二酸化炭素や粉末も使えます。", "subject_key": "property"}, {"topic": "自動車ガソリンの性状", "question": "自動車ガソリンについて、正しいものはどれか。", "choices": ["引火点は、およそ40℃である。", "水によく溶ける。", "灯油や軽油と区別するため、オレンジ色に着色されている。", "発火点は、灯油の発火点より低い。", "蒸気は空気より軽い。"], "answer": 3, "explanation": "自動車ガソリンはオレンジ色に着色されています。引火点は−40℃以下、蒸気は空気の約3〜4倍の重さで、水には溶けません。発火点は約300℃で、灯油（約220℃）より高いです。", "subject_key": "property"}, {"topic": "トルエンの性状", "question": "トルエンについて、誤っているものはどれか。", "choices": ["特有の芳香がある。", "引火点は、ベンゼンの引火点より低い。", "蒸気は空気より重い。", "無色透明の液体である。", "水に溶けない。"], "answer": 2, "explanation": "トルエンの引火点は約4℃で、ベンゼン（約−11℃）より高いです。無色透明で芳香があり、水に溶けず、蒸気は空気より重いという記述は正しい内容です。", "subject_key": "property"}, {"topic": "エチレングリコールの性状", "question": "エチレングリコール（第3石油類）について、誤っているものはどれか。", "choices": ["比重は1より大きい。", "無色で粘り気のある液体である。", "自動車エンジンの不凍液に使われる。", "引火点は、常温（20℃）より低い。", "水に溶ける。"], "answer": 4, "explanation": "エチレングリコールの引火点は約111℃で、常温より高いです。無色で粘り気があり、水に溶け、比重は約1.1で、不凍液に使われるという記述は正しい内容です。", "subject_key": "property"}, {"topic": "ジエチルエーテルの性状", "question": "ジエチルエーテルについて、誤っているものはどれか。", "choices": ["引火点は、−40℃より低い。", "特殊引火物に該当する。", "水によく溶け、比重は1より大きい。", "蒸気には麻酔性がある。", "空気に長く触れたり日光にさらされたりすると、爆発性の過酸化物を生じる。"], "answer": 3, "explanation": "ジエチルエーテルは水にわずかに溶ける程度で、比重は約0.7と水より軽いです。特殊引火物で引火点は約−45℃、過酸化物を生じること、蒸気に麻酔性があることは正しい内容です。", "subject_key": "property"}, {"topic": "メタノールの性状", "question": "メタノールについて、誤っているものはどれか。", "choices": ["毒性がある。", "燃えるときの炎は淡く、明るい所では見えにくい。", "無色透明で揮発性がある。", "水とよく混ざる。", "引火点は、常温（20℃）より高い。"], "answer": 5, "explanation": "メタノールの引火点は約11℃で、常温より低いため、常温で引火の危険があります。無色透明で揮発性があり、水とよく混ざり、毒性があり、炎が見えにくいという記述は正しい内容です。", "subject_key": "property"}], "subjects": [{"key": "law", "name": "危険物に関する法令", "short": "法令", "questions": 15, "from": 1, "to": 15}, {"key": "physchem", "name": "基礎的な物理学及び基礎的な化学", "short": "物理・化学", "questions": 10, "from": 16, "to": 25}, {"key": "property", "name": "危険物の性質並びにその火災予防及び消火の方法", "short": "性質・消火", "questions": 10, "from": 26, "to": 35}]};
+const NUMS = "①②③④⑤";
+const STORE = "otsu4-trial-v1";
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch (e) { saved = {}; }
+function persist() { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} }
+
+const app = document.getElementById("app");
+const subjects = DATA.subjects;
+const qs = DATA.questions.map((q, i) => ({ ...q, no: i + 1 }));
+let run = null; // { list: [question numbers], pos, answered: {no: choice} , label }
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+
+function stats(subjKey) {
+  const list = qs.filter(q => !subjKey || q.subject_key === subjKey);
+  const done = list.filter(q => saved[q.no]);
+  const ok = done.filter(q => saved[q.no].ok).length;
+  return { total: list.length, done: done.length, ok, rate: done.length ? Math.round(ok / done.length * 100) : null };
+}
+function wrongNos() { return qs.filter(q => saved[q.no] && !saved[q.no].ok).map(q => q.no); }
+
+// note の商品（2026年下期のマガジン）。期が変わったら URL を差し替える（promo/field-books/update-rules.md）
+function more() {
+  const a = (href, name, sub) => el("a", { href, target: "_blank", rel: "noopener" }, name, el("span", {}, sub));
+  return el("div", { class: "more" }, el("h2", {}, "もっと解くなら（note）"),
+    a("https://note.com/gutti_car/m/m02d14a3b0035", "本試験形式の模擬試験", "35問×9回・自動採点のExcel"),
+    a("https://note.com/gutti_car/m/m5c1a5e40256f", "分野別問題集", "法令・物理化学・性質消火の3冊"));
+}
+
+function home() {
+  run = null;
+  const all = stats();
+  const wrong = wrongNos();
+  const cards = subjects.map(s => {
+    const st = stats(s.key);
+    const rate = st.rate == null ? el("span", { class: "rate" }, "—", el("small", {}, "未回答"))
+      : el("span", { class: "rate " + (st.rate >= 60 ? "pass" : "fail") }, st.rate + "%", el("small", {}, st.rate >= 60 ? "合格ライン以上" : "60%未満"));
+    return el("button", { class: "subj", id: "subj-" + s.key, onclick: () => start(qs.filter(q => q.subject_key === s.key).map(q => q.no), s.short) },
+      el("span", { class: "name" }, s.short),
+      rate,
+      el("span", { class: "meta" }, `${s.questions}問・回答済み ${st.done}・正解 ${st.ok}`),
+      el("span", { class: "meter", "aria-hidden": "true" }, el("i", { style: `width:${st.rate ?? 0}%` }), el("b")));
+  });
+  app.replaceChildren(...[
+    el("div", {}, el("span", { class: "sign" }, "危険物 乙種第4類")),
+    el("h1", {}, DATA.title.split(" ").flatMap((w, i) => i ? [el("br"), w] : [w]), `（${qs.length}問）`),
+    el("p", { class: "lead" }, "選択肢を選んで「回答する」で答え合わせ。選び直しもできます。科目ごとの正解率が残ります。本番の合格は 3科目それぞれ 60%以上です。"),
+    el("div", { class: "subjects" }, cards),
+    el("div", { class: "row" },
+      el("button", { class: "btn primary", id: "start-all", onclick: () => start(qs.map(q => q.no), "35問すべて") }, "35問すべて解く"),
+      el("button", { class: "btn", id: "start-wrong", disabled: !wrong.length, onclick: () => start(wrong, "間違えた問題") },
+        wrong.length ? `間違えた ${wrong.length}問だけ` : "間違えた問題はまだありません")),
+    el("p", { class: "note" }, `全体：回答済み ${all.done} / ${all.total}・正解 ${all.ok}。記録はこのスマホの中だけに残ります。`),
+    all.done ? el("button", { class: "link", id: "reset", onclick: resetAsk }, "記録を消す") : null,
+    more()
+  ].filter(Boolean));
+  window.scrollTo(0, 0);
+}
+
+function resetAsk(ev) {
+  const b = ev.currentTarget;
+  if (b.dataset.armed) { saved = {}; persist(); home(); return; }
+  b.dataset.armed = "1"; b.textContent = "もう一度押すと、すべての記録を消します";
+}
+
+function start(list, label) { run = { list, pos: 0, answered: {}, label }; question(); }
+
+function question() {
+  const q = qs[run.list[run.pos] - 1];
+  const s = subjects.find(x => x.key === q.subject_key) || {};
+  const total = run.list.length;
+  // 選んだだけでは答え合わせしない。迷ったら選び直してから「回答する」（2026-11-14 オーナー指示）
+  let pick = null;
+  const submit = el("button", { class: "btn primary", id: "submit", disabled: true, onclick: () => answer(q, pick) }, "選択肢を選んでください");
+  const choices = q.choices.map((c, i) => el("button", { class: "choice", id: `c${i + 1}`, "aria-pressed": "false", onclick: ev => {
+      pick = i + 1;
+      document.querySelectorAll(".choice").forEach(b => { b.classList.remove("selected"); b.setAttribute("aria-pressed", "false"); });
+      ev.currentTarget.classList.add("selected"); ev.currentTarget.setAttribute("aria-pressed", "true");
+      submit.disabled = false; submit.textContent = `${NUMS[i]} で回答する`;
+    } },
+    el("span", { class: "no" }, NUMS[i]), el("span", {}, c)));
+  app.replaceChildren(
+    el("div", { class: "top" }, el("button", { class: "link", id: "quit", onclick: home }, "← やめる"),
+      el("span", { class: "count" }, `${run.pos + 1} / ${total}`)),
+    el("div", { class: "progress", "aria-hidden": "true" }, el("i", { style: `width:${run.pos / total * 100}%` })),
+    el("div", { class: "top" }, el("span", { class: "eyebrow" }, `問${q.no}`), el("span", { class: "tag" }, s.short || "")),
+    el("p", { class: "question" }, q.question),
+    el("div", { class: "choices", id: "choices" }, choices),
+    el("div", { class: "submit", id: "submit-bar" }, submit)
+  );
+  window.scrollTo(0, 0);
+}
+
+function answer(q, pick) {
+  const ok = pick === q.answer;
+  run.answered[q.no] = pick;
+  saved[q.no] = { ok, pick, at: Date.now() };
+  persist();
+  document.getElementById("submit-bar").remove();
+  document.querySelectorAll(".choice").forEach((b, i) => {
+    b.disabled = true; b.classList.remove("selected");
+    if (i + 1 === q.answer) b.classList.add("correct");
+    else if (i + 1 === pick) b.classList.add("wrong");
+  });
+  const last = run.pos === run.list.length - 1;
+  const fb = el("div", { class: "feedback", id: "feedback" },
+    el("div", { class: "verdict " + (ok ? "ok" : "ng") }, ok ? "○ 正解" : `× 不正解　正解は ${NUMS[q.answer - 1]}`),
+    el("p", { class: "exp" }, q.explanation));
+  const next = el("button", { class: "btn primary", id: "next", onclick: () => { if (last) result(); else { run.pos++; question(); } } },
+    last ? "結果を見る" : "次の問題へ");
+  app.append(fb, el("div", { class: "row" }, next));
+  fb.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+}
+
+function result() {
+  const nos = Object.keys(run.answered).map(Number);
+  const ok = nos.filter(n => run.answered[n] === qs[n - 1].answer).length;
+  const rows = subjects.map(s => {
+    const mine = nos.filter(n => qs[n - 1].subject_key === s.key);
+    if (!mine.length) return null;
+    const k = mine.filter(n => run.answered[n] === qs[n - 1].answer).length;
+    const r = Math.round(k / mine.length * 100);
+    return el("div", { class: "subj" }, el("span", { class: "name" }, s.short),
+      el("span", { class: "rate " + (r >= 60 ? "pass" : "fail") }, r + "%", el("small", {}, r >= 60 ? "合格ライン以上" : "60%未満")),
+      el("span", { class: "meta" }, `${mine.length}問中 ${k}問正解`),
+      el("span", { class: "meter", "aria-hidden": "true" }, el("i", { style: `width:${r}%` }), el("b")));
+  }).filter(Boolean);
+  const wrong = nos.filter(n => run.answered[n] !== qs[n - 1].answer);
+  app.replaceChildren(
+    el("div", { class: "result-head" }, el("span", { class: "eyebrow" }, run.label + "の結果"),
+      el("span", { class: "big" }, `${ok} / ${nos.length}`),
+      el("span", { class: "verdict-line" }, rows.every(r => r.querySelector(".pass")) ? "どの科目も 60%以上です" : "60%に届かない科目があります")),
+    el("div", { class: "subjects" }, rows),
+    el("div", { class: "row" },
+      wrong.length ? el("button", { class: "btn primary", id: "retry-wrong", onclick: () => start(wrong, "間違えた問題") }, `間違えた ${wrong.length}問を解き直す`) : null,
+      el("button", { class: "btn", id: "home", onclick: home }, "最初の画面へ")),
+    more()
+  );
+  window.scrollTo(0, 0);
+}
+
+home();
+</script>
+
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
+</body></html>
