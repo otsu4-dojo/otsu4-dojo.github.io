@@ -252,7 +252,7 @@ function result() {
     if (!mine.length) return null;
     const k = mine.filter(n => run.answered[n] === qs[n - 1].answer).length;
     const r = Math.round(k / mine.length * 100);
-    const exam = !isBook();
+    const exam = !isBook() && nos.length >= qs.length;
     return el("div", { class: "subj" }, el("span", { class: "name" }, s.short),
       el("span", { class: "rate " + (exam ? (r >= 60 ? "pass" : "fail") : "") }, r + "%",
         exam ? el("small", {}, r >= 60 ? "合格ライン以上" : "60%未満") : null),
@@ -263,7 +263,7 @@ function result() {
   app.replaceChildren(
     el("div", { class: "result-head" }, el("span", { class: "eyebrow" }, run.label + "の結果"),
       el("span", { class: "big" }, `${ok} / ${nos.length}`),
-      el("span", { class: "verdict-line" }, isBook() ? `正解率 ${nos.length ? Math.round(ok / nos.length * 100) : 0}%`
+      el("span", { class: "verdict-line" }, (isBook() || nos.length < qs.length) ? `正解率 ${nos.length ? Math.round(ok / nos.length * 100) : 0}%`
         : rows.every(r => r.querySelector(".pass")) ? "どの科目も 60%以上です" : "60%に届かない科目があります")),
     el("div", { class: "subjects" }, rows),
     el("div", { class: "row" },
