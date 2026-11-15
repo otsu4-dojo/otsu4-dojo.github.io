@@ -1,5 +1,5 @@
 // オフラインでも開けるようにする。画面を開くときはネットを優先し、つながらなければ保存した版を出す。
-const CACHE = "app-14e7a94445ac";
+const CACHE = "app-88e50c79abfd";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
